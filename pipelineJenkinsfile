@@ -1,0 +1,82 @@
+#!groovy?
+
+pipeline {
+
+	agent any
+
+	options {
+        buildDiscarder(logRotator(numToKeepStr: '5', artifactNumToKeepStr: '5', daysToKeepStr: '10'))
+        disableConcurrentBuilds()
+    }
+	tools {
+        maven 'maven'
+        jdk 'java'		
+    }
+       triggers {
+  //Execute weekdays every four hours starting at minute 0
+  cron('0 */4 * * 1-5')
+ }
+	
+	stages {		
+		stage ('Checkout Repo') {
+			steps {
+				script {
+				   def VERSION = VersionNumber projectStartDate: '1970-01-01', versionNumberString: 'RC19.2-${BUILD_MONTH,XX}.${BUILD_DAY,XX}', versionPrefix: ''
+				   echo "${VERSION}"
+				   env.DPLVERSION="${VERSION}"
+				   currentBuild.displayName = VERSION
+				   // Doing checkout of life repo
+				   git branch: 'product', credentialsId: '06eb126d-e242-4ff3-b5d1-d193f46fc374', url: 'https://github.com/kamlesh1984/micro-ecommerce.git/'
+            
+			          }
+		        }
+            }
+        stage('Build') {
+        steps { 
+       
+          // Run the maven build
+            sh  'mvn clean install -Dversion=RC19.2'
+
+              }
+                     }
+        stage('Copy file') {
+        steps { 
+       
+          // copy jar file on target machine
+             sshagent(['5ad390b4-9dd0-486f-a7aa-27add294ad47']) {
+          // 'myuid@' required for scp (this is from UID jenkins to UID myuid)
+             sh "scp $WORKSPACE/testpipeline/microservices-orders/target/microservices-orders-0.0.1-SNAPSHOT.jar kamlesh@35.222.104.43:/home/kamlesh/remotefile"
+}
+
+              }
+                     }
+        stage('Deploy jar') {
+        steps { 
+       
+          // copy jar file on target machine
+             sshagent(['5ad390b4-9dd0-486f-a7aa-27add294ad47']) {
+          // 'myuid@' required for scp (this is from UID jenkins to UID myuid)
+             sh 'ssh -o StrictHostKeyChecking=no kamlesh@35.222.104.43 '
+             sh 'cd /home/kamlesh/remotefile'
+             sh 'java -jar microservices-orders-0.0.1-SNAPSHOT.jar'
+}
+
+              }
+                     }}					 
+           					 
+        post {
+	always {
+		cleanWs()
+		mail bcc: '', body: """Jenkins Job: ${JOB_NAME}
+Build: ${BUILD_NUMBER}
+Status: $currentBuild.currentResult
+Job URL: ${BUILD_URL}
+//Accessing Build Log URL:http://integral-1523411621.ap-southeast-1.elb.amazonaws.com/jenkins/view/Test/job/test-polisy-pipeline/${BUILD_NUMBER}/console
+(Automatic notification - Please don't reply to this email. For further information, please contact DevOps Team)
+Best Regards, 
+DevOps Team""", cc: '', from: '<DevopsTeam@test.com>', replyTo: '', subject: "[$currentBuild.currentResult] - [Test-Pipeline] ", to: 'kamleshsingh.it@gmail.com'
+    }
+    }
+	}
+	
+	
