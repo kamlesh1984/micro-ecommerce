@@ -26,7 +26,7 @@ pipeline {
 				   env.DPLVERSION="${VERSION}"
 				   currentBuild.displayName = VERSION
 				   // Doing checkout of life repo
-				   git branch: 'product', credentialsId: '06eb126d-e242-4ff3-b5d1-d193f46fc374', url: 'https://github.com/kamlesh1984/micro-ecommerce.git/'
+				   git branch: 'master', credentialsId: '06eb126d-e242-4ff3-b5d1-d193f46fc374', url: 'https://github.com/kamlesh1984/micro-ecommerce.git/'
             
 			          }
 		        }
