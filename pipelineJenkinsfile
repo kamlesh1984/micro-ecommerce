@@ -56,7 +56,7 @@ pipeline {
           // copy jar file on target machine
              sshagent(['c759d6bc-84b5-4356-9a1a-9dbd646e1f97']) {
           // 'myuid@' required for scp (this is from UID jenkins to UID myuid)
-             sh 'ssh -o StrictHostKeyChecking=no kamlesh@35.222.104.43 '
+             sh 'ssh -t -o StrictHostKeyChecking=no kamlesh@35.222.104.43 '
              sh 'cd /home/kamlesh/remotefile'
              sh 'java -jar microservices-orders-0.0.1-SNAPSHOT.jar'
 }
